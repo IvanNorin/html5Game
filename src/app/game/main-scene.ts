@@ -7,7 +7,13 @@ import { Injectable } from "@angular/core";
 })
 export class MainScene extends Phaser.Scene {
 
-  private player!: Phaser.Physics.Matter.Sprite;
+  green: any;
+  blue: any;
+  greenKeys: any;
+  blueKeys: any;
+
+
+  private player!: Phaser.Physics.Arcade.Sprite;
   private keys!: any;
   private platforms!: any;
   private stars!: any;
@@ -22,42 +28,36 @@ export class MainScene extends Phaser.Scene {
   }
 
   create() {
-
     this.add.image(400, 300, 'sky');
     this.stars = this.physics.add.group({
       key: 'star',
       repeat: 11,
-      setXY: { x: 12, y: 20, stepX: 70 }
+      setXY: { x: 12, y: 100, stepX: 70 }
     });
 
     this.createPlayer(this);
 
     this.platforms = this.physics.add.staticGroup();
 
-    this.platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+    this.platforms.create(600, 17, 'ground');
+    this.platforms.create(200, 17, 'ground');
+    this.platforms.create(150, 200, 'ground');
+    this.platforms.create(750, 50, 'ground').setScale(2).refreshBody();
 
-    this.platforms.create(600, 400, 'ground');
-    this.platforms.create(50, 250, 'ground');
-    this.platforms.create(750, 220, 'ground');
-
-    this.physics.add.collider(this.player, this.platforms);
+    this.player.setBounce(0.3);
+    this.physics.add.collider(this.player, this.platforms, object1 => console.log("platforms"));
     this.physics.add.overlap(this.player, this.stars, this.collectStar, undefined, this);
 
   }
 
   preload() {
-    this.load.scenePlugin({
-      key: 'ArcadePhysics',
-      sceneKey: 'physics',
-      url: Phaser.Physics.Arcade.ArcadePhysics
-    });
     this.load.image('star', 'assets/star.png');
     this.load.image('sky', 'assets/sky.png');
     this.load.image('ground', 'assets/platform.png');
     this.load.spritesheet("player", "assets/characters/player.png", {
       frameWidth: 48,
       frameHeight: 48
-    })
+    });
   }
 
   override update() {
@@ -85,15 +85,15 @@ export class MainScene extends Phaser.Scene {
     //we can't do anything if we are currently knocked down/incapacitated
     if (!this.isKnockedDown) {
       //set the isKnockedDown flag if conditions are met and run the appropriate animation
-      if (this.keys.s1.isDown) {
-        this.player.setVelocity(0, this.playerVelocity.y);
-        this.isKnockedDown = true;
-        this.player.anims.play('dead');
-        this.player.anims.stopAfterRepeat(0);
-        this.player.anims.chain('laying');
-        this.player.anims.chain('stand_' + this.lastDirection);
-        return; //skip the rest of the update
-      }
+      // if (this.keys.s1.isDown) {
+      //   this.player.setVelocity(0, this.playerVelocity.y);
+      //   this.isKnockedDown = true;
+      //   this.player.anims.play('dead');
+      //   this.player.anims.stopAfterRepeat(0);
+      //   this.player.anims.chain('laying');
+      //   this.player.anims.chain('stand_' + this.lastDirection);
+      //   return; //skip the rest of the update
+      // }
     }
 
     if (this.isAttacking) {
@@ -102,7 +102,9 @@ export class MainScene extends Phaser.Scene {
       this.player.anims.play('attack_' + this.lastDirection, true);
     } else { //not attacking, check movement
       if (this.keys.up.isDown) {  // Move up
+
         this.playerVelocity.y = -1;
+        // this.player.setVelocityY(-160);
         if (this.playerVelocity.x == 0) {
           this.player.anims.play('up', true);
         }
@@ -136,21 +138,22 @@ export class MainScene extends Phaser.Scene {
     }
     this.playerVelocity.normalize();
     this.playerVelocity.scale(1.2);
-    this.player.setVelocity(this.playerVelocity.x, this.playerVelocity.y);
+    this.player.setVelocityX(this.playerVelocity.x * 100);
+    this.player.setVelocityY(this.playerVelocity.y * 100);
   }
 
   createPlayer(that: any) {
-    this.player = that.matter.add.sprite(100, 100, 'player');
+    this.load.scenePlugin({
+      key: 'ArcadePhysics',
+      sceneKey: 'physics',
+      url: Phaser.Physics.Arcade.ArcadePhysics
+    });
+    this.player = that.physics.add.sprite(100, 100, 'player');
+    this.player.setBounce(0.2);
+    this.player.setCollideWorldBounds(true);
     this.player.setSize(1, 1);
     this.player.setScale(1.3, 1.3);
-    this.keys = that.input.keyboard.addKeys({
-      'up': Phaser.Input.Keyboard.KeyCodes.W,
-      'down': Phaser.Input.Keyboard.KeyCodes.S,
-      'left': Phaser.Input.Keyboard.KeyCodes.A,
-      'right': Phaser.Input.Keyboard.KeyCodes.D,
-      'space': Phaser.Input.Keyboard.KeyCodes.SPACE,
-      's1': Phaser.Input.Keyboard.KeyCodes.ONE
-    });
+    this.keys = this.input.keyboard.createCursorKeys();
 
     that.anims.create({
       key: 'attack_down',

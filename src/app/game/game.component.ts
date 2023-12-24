@@ -22,16 +22,14 @@ export class GameComponent implements OnInit {
       title: "Grim RPG",
       backgroundColor: "#18216D",
       physics: {
-        default: 'matter',
-        matter: {
-           debug:true,
-           gravity: { y: 0 }
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 0 }
         }
-      },
+      }
     };
   }
   ngOnInit() {
     this.phaserGame = new Phaser.Game(this.config);
   }
 }
-
